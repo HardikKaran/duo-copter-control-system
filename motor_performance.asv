@@ -1,0 +1,18 @@
+function [throttle_grid, thrust_grid, throttle_max] = motor_performance(filename)
+    data = readtable(filename);
+    
+    time = data.("Time_s_");
+    esc_signal = data.("ESCSignal__s_");
+    thrust = data .("Thrust_gf_") ;
+    power_raw = data .("ElectricalPower_W_") ;
+
+    % min-max normalisation
+    esc_min = min(esc_signal);
+    esc_max = max(esc_signal);
+    throttle_raw = (esc_signal - esc_min) * 100 / (esc_max - esc_min);
+    
+    thrust_N_raw = thrust * 9.81 / 1000;
+    % plot(time,throttle_raw,'ob');
+
+    power = 
+end

@@ -14,13 +14,7 @@ function params = rig()
     params.cable_slope = 0.190; % [kg/m]
     params.cable_intercept = 0.107; % [kg]  at h = 0
 
-    % --- Throttle-to-thrust lookup (1-D) ---
-    % Replace these with your measured curve. The points below are an
-    % indicative shape matching the motor-28-35 plateau near 79% throttle.
-    params.throttle_max       = 79;          % [%], saturate here, not at 100
-    params.throttle_grid      = [0   10   20   30   40   50   60   70   79   100];
-    % Thrust in Newtons. Last value clamped at plateau.
-    params.thrust_grid        = [0  0.4  1.1  2.0  3.1  4.3  5.6  6.8  7.5  7.5];
+    % throttle to thrust
 
     % --- Friction geometry & coefficients ---
     params.L_pads             = 0.1835;      % [m], rail pad separation (G10)
