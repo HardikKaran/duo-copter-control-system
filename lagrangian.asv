@@ -1,5 +1,5 @@
-function [h_ddot, F_grav, F_fict, F_fric] = ...
-    lagrangian(h, h_dot, F_thrust, params)
+function [h_ddot, F_thrust, F_grav, F_fict, F_fric] = ...
+    lagrangian(h, h_dot, throttle, params)
 % Lagrangian EOM for the duo-copter cart on a vertical rail.
 %
 % M(h)*h_ddot = T(throttle) + F_fric - [M_g(h) + dM_g/dh * h]*g
@@ -26,6 +26,12 @@ M = params.m_fixed + m_cable + params.m_counterweight;
 
 % Gravitational mass
 M_g = (params.m_fixed - params.m_counterweight) + m_cable;
+
+% Thrust 
+throttle_clamped = max(0, min(throttle, params.throttle_max));
+F_thrust = interp1(params.throttle_grid, params.thrust_grid, ...
+    throttle_clamped, 'linear', 'extrap');
+F_thrust = max(0, F_thrust);
 
 % Gravity term (includes variable-mass correction) 
 F_grav = (M_g + dMdh * h) * g;
