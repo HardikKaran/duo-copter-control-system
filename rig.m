@@ -14,7 +14,24 @@ function params = rig()
     params.cable_slope = 0.190; % [kg/m]
     params.cable_intercept = 0.107; % [kg]  at h = 0
 
-    % throttle to thrust
+    % --- Motor throttle → thrust lookup (from CSV) ---
+    [tg, fg, tmax] = motor_performance('Motor Performance Test 3536 15V.csv');
+    params.throttle_grid = tg;   % [%]  (two motors combined via doubling thrust)
+    params.thrust_grid   = fg * 2; % [N]  both motors
+    params.throttle_max  = tmax;
+
+    % --- Sample rate ---
+    params.dt      = 0.05;   % [s] 20 Hz LiDAR
+    params.sigma   = 0.007;  % [m] LiDAR noise std
+    params.tau_m   = 0.05;   % [s] motor lag time constant
+
+    % --- GA / cost function normalisation references ---
+    params.MSD_ref = 0.0015; % [m^2]
+    params.E_ref   = 11000;  % [J]
+
+    % --- Derivative filter coefficient (N in tustin) ---
+    params.alpha = 0.3;      % low-pass weight on error signal
+
 
     % --- Friction geometry & coefficients ---
     params.L_pads             = 0.1835;      % [m], rail pad separation (G10)
