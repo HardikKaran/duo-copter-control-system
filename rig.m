@@ -8,8 +8,6 @@ function params = rig()
     m_structure = 0.0565; % [kg] CAD design EDIT - ONLY 1 arm
 
     params.m_fixed = m_cart + 2*(m_motor + m_esc + m_propeller + m_structure);
-    
-    params.m_counterweight = 0.150; % [kg]
 
     params.cable_slope = 0.190; % [kg/m]
     params.cable_intercept = 0.107; % [kg] at h = 0
@@ -23,11 +21,6 @@ function params = rig()
     % Sample rate
     params.dt = 0.05; % [s] 20 Hz LiDAR
     params.sigma = 0.007; % [m] LiDAR noise std
-    params.tau_m = 0.05; % [s] motor lag time constant
-
-    % cost function normalisation references
-    params.MSD_ref = 0.0015; % [m^2]
-    params.E_ref = 11000; % [J]
 
     % Derivative filter coefficient
     params.alpha = 0.3; % low-pass weight on error signal
@@ -35,9 +28,9 @@ function params = rig()
 
     % Friction geometry & coefficients 
     params.L_pads = 0.1835; % [m], rail pad separation ESTIMATE
-    params.x_thrust = 0.0480; % [m], thrust line offset ESTIMATE
-    params.x_cg = 0.0350; % [m], CG offset to rail centreline CAD EDIT
-    params.mu_k = 0.15; % [-], kinetic friction (mid of 0.11-0.17)
+    params.x_thrust = 0.03875; % [m], thrust line offset ESTIMATE
+    params.x_cg = 0.03888; % [m], CG offset to rail centreline CAD EDIT
+    params.mu_k = 0.17; % [-], kinetic friction (mid of 0.11-0.17)
     params.F_static = 1.275; % [N], static breakaway (brief: 130 g)
     params.eps_velocity = 1e-3; % [m/s], zero-velocity tolerance
 
