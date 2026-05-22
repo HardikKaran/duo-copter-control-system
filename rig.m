@@ -13,9 +13,10 @@ function params = rig()
     params.cable_intercept = 0.107; % [kg] at h = 0
 
     % Motor throttle (from CSV)
-    [tg, fg, tmax] = motor_performance('Motor Performance Test 3536 15V.csv');
+    [tg, fg, pg, tmax] = motor_performance('Motor Performance Test 3536 15V.csv');
     params.throttle_grid = tg; % [%]  
     params.thrust_grid = fg * 2; % [N] both motors
+    params.power_grid = pg * 2; % [W] Power grid both motors
     params.throttle_max = tmax;
 
     % Sample rate

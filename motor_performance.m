@@ -1,4 +1,4 @@
-function [throttle_grid, thrust_grid, throttle_max] = motor_performance(filename)
+function [throttle_grid, thrust_grid, power_grid, throttle_max] = motor_performance(filename)
     data = readtable(filename);
 
     esc_signal = data{:,2}; % ESC signal (µs)
