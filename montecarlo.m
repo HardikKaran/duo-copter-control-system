@@ -1,0 +1,100 @@
+function R = run_montecarlo(gains, params0, cfg, label)
+% RUN_MONTECARLO  Robustness study for a FIXED gain set.
+% Samples plant uncertainties from priors, runs N closed-loop sims, and
+% reports metric distributions, percentiles, and failure rates. Numerical
+% (solver chatter/blow-up) and control failures are counted separately so
+% the percentiles are not polluted by solver artefacts.
+%
+% R = run_montecarlo([Kp Ki Kd], rig(), study_config(), 'BO design')
+
+if nargin < 4, label = 'design'; end
+rng(cfg.mc_seed);
+N = cfg.mc_N;
+fn = fieldnames(cfg.mc_tol);
+
+% storage
+ITAE=nan(N,1); OS=nan(N,1); TS=nan(N,1); SSE=nan(N,1); EFF=nan(N,1); CH=nan(N,1);
+numfail=false(N,1); ctrlfail=false(N,1);
+
+for i = 1:N
+    p = params0;
+    for k = 1:numel(fn)
+        f = fn{k};
+        p.(f) = perturb(params0.(f), cfg.mc_tol.(f), cfg.mc_dist);
+    end
+    % keep physically sane
+    p.mu_k = max(p.mu_k, 0); p.F_static = max(p.F_static, 0);
+    p.L_pads = max(p.L_pads, 1e-3); p.thrust_scale = max(p.thrust_scale, 0.1);
+
+    res = simulate_rig(gains, p, cfg.ref_spec, cfg.T_end);
+    % optional sensor noise injected as post-hoc evaluation noise on h
+    if cfg.mc_sensor_std > 0
+        res.h = res.h + cfg.mc_sensor_std*randn(size(res.h));
+    end
+    m = eval_metrics(res, cfg);
+
+    ITAE(i)=m.ITAE; OS(i)=m.overshoot_pct; TS(i)=m.settling_time;
+    SSE(i)=m.SSE; EFF(i)=m.effort_rate; CH(i)=m.chatter_rate;
+    numfail(i)=m.num_fail; ctrlfail(i)=m.control_fail;
+end
+
+ok = ~(numfail | ctrlfail);
+pc = @(x) local_prctile(x(ok), [50 90 95]);
+
+R.gains = gains;
+R.N = N;
+R.fail_numeric_pct = 100*mean(numfail);
+R.fail_control_pct = 100*mean(ctrlfail & ~numfail);
+R.success_pct      = 100*mean(ok);
+R.pct.ITAE = pc(ITAE); R.pct.overshoot = pc(OS);
+R.pct.settling = pc(TS); R.pct.SSE = pc(SSE); R.pct.effort = pc(EFF);
+R.raw = struct('ITAE',ITAE,'OS',OS,'TS',TS,'SSE',SSE,'EFF',EFF,'CH',CH, ...
+    'numfail',numfail,'ctrlfail',ctrlfail);
+
+% --- report --------------------------------------------------------------
+fprintf('\n==== Monte Carlo robustness: %s (N=%d) ====\n', label, N);
+fprintf('  success        : %5.1f %%\n', R.success_pct);
+fprintf('  numeric fail   : %5.1f %%\n', R.fail_numeric_pct);
+fprintf('  control fail   : %5.1f %%\n', R.fail_control_pct);
+fprintf('  metric        |   p50      p90      p95\n');
+fprintf('  overshoot [%%] | %7.2f %8.2f %8.2f\n', R.pct.overshoot);
+fprintf('  settling  [s] | %7.2f %8.2f %8.2f\n', R.pct.settling);
+fprintf('  SSE      [m]  | %7.4f %8.4f %8.4f\n', R.pct.SSE);
+fprintf('  ITAE         | %7.2f %8.2f %8.2f\n', R.pct.ITAE);
+
+% --- plots ---------------------------------------------------------------
+figure('Name',sprintf('Monte Carlo: %s',label),'Color','w');
+tiledlayout(2,2);
+nexttile; histogram(OS(ok)); xlabel('overshoot [%]'); ylabel('count'); grid on; title('Overshoot');
+nexttile; histogram(TS(ok)); xlabel('settling time [s]'); ylabel('count'); grid on; title('Settling');
+nexttile; histogram(SSE(ok)); xlabel('SSE [m]'); ylabel('count'); grid on; title('Steady-state error');
+nexttile;
+cats = categorical({'success','numeric fail','control fail'});
+bar(cats, [R.success_pct, R.fail_numeric_pct, R.fail_control_pct]);
+ylabel('% of draws'); grid on; title('Outcome split');
+end
+
+% -------------------------------------------------------------------------
+function p = local_prctile(x, q)
+% Linear-interpolation percentile (no Statistics toolbox needed).
+x = sort(x(~isnan(x))); x = x(:);          % column
+q = q(:).';                                 % row
+if isempty(x), p = nan(size(q)); return; end
+n = numel(x);
+pos = (q/100) * (n-1) + 1;                  % 1-based positions, row
+lo  = min(max(floor(pos),1),n);
+hi  = min(max(ceil(pos), 1),n);
+fr  = pos - floor(pos);
+xlo = reshape(x(lo),1,[]);  xhi = reshape(x(hi),1,[]);
+p   = xlo + fr .* (xhi - xlo);              % 1xK row
+end
+
+function v = perturb(v0, tol, dist)
+% Perturb a (possibly scalar) nominal value by fractional tolerance.
+if strcmpi(dist,'uniform')
+    v = v0 .* (1 + tol*(2*rand(size(v0))-1));
+else % truncated normal at +/- 3 sigma
+    z = randn(size(v0)); z = max(min(z,3),-3);
+    v = v0 .* (1 + tol*z);
+end
+end
