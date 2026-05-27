@@ -5,12 +5,12 @@ t = sampleH(1, :);
 h = sampleH(2, :);
 
 % Keep only samples after t = 68 s
-mask = t > 68;
+mask = t > 67;
 t = t(mask);
 h = h(mask);
 
 % Smooth the signal and estimate residual noise
-windowSize = 20;
+windowSize = 8;
 hSmooth = movmean(h, windowSize);
 residual = h - hSmooth;
 noiseVar = var(residual);

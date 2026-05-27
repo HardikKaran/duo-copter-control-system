@@ -5,7 +5,7 @@ function params = rig()
     m_motor = 0.114; % [kg] each (motor 35-36)
     m_esc = 0.040; % [kg] each
     m_propeller = 0.010; % [kg] each
-    params.m_structure = 0.02825; % [kg] CAD design EDIT - ONLY 1 arm
+    params.m_structure = 0.06276 / 2; % [kg] CAD design EDIT - ONLY 1 arm
 
     params.m_fixed = m_cart + 2*(m_motor + m_esc + m_propeller + params.m_structure);
 
